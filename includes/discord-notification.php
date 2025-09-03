@@ -165,6 +165,47 @@ function buildDiscordMessage($data) {
                 ]]
             ];
             
+        case 'new_review':
+            $stars_display = str_repeat('⭐', $data['stars']) . str_repeat('☆', 5 - $data['stars']);
+            
+            return [
+                'embeds' => [[
+                    'title' => '⭐ Nouvel avis reçu sur StarMarket',
+                    'description' => "**{$data['reviewer']}** a laissé un avis sur votre transaction !",
+                    'fields' => [
+                        [
+                            'name' => 'Item',
+                            'value' => $data['item_name'],
+                            'inline' => true
+                        ],
+                        [
+                            'name' => 'Note',
+                            'value' => $stars_display . " ({$data['stars']}/5)",
+                            'inline' => true
+                        ],
+                        [
+                            'name' => 'Rôle',
+                            'value' => $data['role'] === 'SELLER' ? 'En tant que vendeur' : 'En tant qu\'acheteur',
+                            'inline' => true
+                        ]
+                    ],
+                    'color' => $data['stars'] >= 4 ? 0x10b981 : ($data['stars'] >= 3 ? 0xf59e0b : 0xef4444),
+                    'footer' => [
+                        'text' => 'StarMarket - Marketplace Star Citizen'
+                    ],
+                    'timestamp' => date('c')
+                ]],
+                'components' => [[
+                    'type' => 1,
+                    'components' => [[
+                        'type' => 2,
+                        'style' => 5,
+                        'label' => 'Voir votre profil',
+                        'url' => $data['profile_url']
+                    ]]
+                ]]
+            ];
+            
         default:
             return [
                 'content' => '🔔 Vous avez une nouvelle notification sur StarMarket !',
