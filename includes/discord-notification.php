@@ -165,6 +165,63 @@ function buildDiscordMessage($data) {
                 ]]
             ];
             
+        case 'discord_linked':
+            return [
+                'embeds' => [[
+                    'title' => '🔗 Compte Discord lié avec succès !',
+                    'description' => "Félicitations **{$data['username']}** ! Votre compte Discord est maintenant lié à StarMarket.",
+                    'fields' => [
+                        [
+                            'name' => '📩 Notifications activées',
+                            'value' => 'Vous recevrez désormais des notifications pour :
+• Nouveaux messages dans vos conversations
+• Changements de statut des transactions
+• Nouveaux avis reçus',
+                            'inline' => false
+                        ]
+                    ],
+                    'color' => 0x10b981,
+                    'footer' => [
+                        'text' => 'StarMarket - Marketplace Star Citizen'
+                    ],
+                    'timestamp' => date('c')
+                ]],
+                'components' => [[
+                    'type' => 1,
+                    'components' => [[
+                        'type' => 2,
+                        'style' => 5,
+                        'label' => 'Accéder à StarMarket',
+                        'url' => SITE_URL
+                    ]]
+                ]]
+            ];
+            
+        case 'test_notification':
+            return [
+                'embeds' => [[
+                    'title' => '🧪 Message de test StarMarket',
+                    'description' => $data['message'],
+                    'fields' => [
+                        [
+                            'name' => 'Heure du test',
+                            'value' => $data['timestamp'],
+                            'inline' => true
+                        ],
+                        [
+                            'name' => 'Statut',
+                            'value' => '✅ Connexion fonctionnelle',
+                            'inline' => true
+                        ]
+                    ],
+                    'color' => 0x0ea5e9,
+                    'footer' => [
+                        'text' => 'StarMarket - Test de notification'
+                    ],
+                    'timestamp' => date('c')
+                ]]
+            ];
+            
         case 'new_review':
             $stars_display = str_repeat('⭐', $data['stars']) . str_repeat('☆', 5 - $data['stars']);
             
