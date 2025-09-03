@@ -97,6 +97,62 @@ $pending_reviews_count = count($pending_reviews);
         </div>
     </div>
 
+    <!-- Avis en attente -->
+    <?php if (!empty($pending_reviews)): ?>
+    <div class="pending-reviews-section">
+        <div class="section-header">
+            <h2>⭐ Avis en attente (<?= $pending_reviews_count ?>)</h2>
+            <p>Ces transactions sont terminées, vous pouvez maintenant laisser un avis</p>
+        </div>
+        
+        <div class="pending-reviews-list">
+            <?php foreach ($pending_reviews as $review): ?>
+            <div class="pending-review-card">
+                <div class="review-item-info">
+                    <img src="<?= sanitizeOutput($review['item_image'] ?: 'assets/img/placeholder.jpg') ?>" 
+                         alt="<?= sanitizeOutput($review['item_name']) ?>"
+                         class="item-thumbnail">
+                    
+                    <div class="item-details">
+                        <h4><?= sanitizeOutput($review['item_name']) ?></h4>
+                        <?php if ($review['variant_name']): ?>
+                        <p class="variant-info">
+                            <?= sanitizeOutput($review['variant_name']) ?>
+                            <?php if ($review['color_name']): ?>
+                            - <?= sanitizeOutput($review['color_name']) ?>
+                            <?php endif; ?>
+                        </p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <div class="review-user-info">
+                    <div class="role-info">
+                        <?php if ($review['role'] === 'SELLER'): ?>
+                        <span class="role-badge seller">Évaluer le vendeur</span>
+                        <?php else: ?>
+                        <span class="role-badge buyer">Évaluer l'acheteur</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="user-name">
+                        <?= sanitizeOutput($review['rated_username']) ?>
+                    </div>
+                </div>
+                
+                <div class="review-actions">
+                    <a href="reviews.php?id=<?= $review['id'] ?>" class="btn btn-primary btn-sm">
+                        ⭐ Laisser un avis
+                    </a>
+                    <a href="conversation.php?id=<?= $review['conversation_id'] ?>" class="btn btn-outline btn-sm">
+                        💬 Voir conversation
+                    </a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Filtres rapides -->
     <div class="inbox-filters">
         <div class="filter-tabs">
