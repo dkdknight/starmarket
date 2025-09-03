@@ -214,73 +214,141 @@ Le calcul intelligent compare automatiquement :
 
 ## 🌐 URLs de Test Essentielles
 
-### Argent réel (REAL_MONEY)
-- Prix en EUR/USD avec région (EU/NA)
-- Notes du vendeur pour instructions
-- Système de mise en relation uniquement
+### 🚀 Navigation Principale
+- http://localhost/StarMarket/ - **Accueil** avec stats dynamiques
+- http://localhost/StarMarket/items.php - **Catalogue** complet avec filtres
+- http://localhost/StarMarket/browse.php - **Annonces** avec recherche avancée
+- http://localhost/StarMarket/deals.php - **Bonnes Affaires** automatiques
+- http://localhost/StarMarket/latest.php - **Dernières** annonces publiées
 
-### In-Game (IN_GAME)
-- Prix en aUEC (monnaie du jeu)
-- Lieu de rendez-vous obligatoire
-- Créneaux de disponibilité
-- Système de messagerie pour coordination
+### 🔐 Authentification
+- http://localhost/StarMarket/register.php - **Inscription** nouvelle
+- http://localhost/StarMarket/login.php - **Connexion** membre
 
-## Système de bonnes affaires
+### 👤 Espace Membre (Après connexion)
+- http://localhost/StarMarket/sell.php - **Créer** une annonce
+- http://localhost/StarMarket/my-listings.php - **Gérer** ses annonces
+- http://localhost/StarMarket/inbox.php - **Messagerie** conversations
 
-Le calcul automatique compare les prix des annonces avec les prix de référence :
-- Deal Score = (Prix Référence - Prix Annonce) / Prix Référence
-- Seules les annonces avec Deal Score > 10% sont affichées
-- Tri par pourcentage de réduction décroissant
+### 🔍 Pages de Test Spécifiques
+- http://localhost/StarMarket/item.php?id=1 - **Fiche** Aegis Avenger Titan
+- http://localhost/StarMarket/profile.php?u=SarahTrader - **Profil** vendeur exemple
+- http://localhost/StarMarket/browse.php?sale_type=IN_GAME - **Filtrer** annonces aUEC
 
-## Sécurité
+## 🛠️ Maintenance et Troubleshooting
 
-- Requêtes préparées PDO contre injection SQL
-- Tokens CSRF sur tous les formulaires sensibles
-- Hachage bcrypt des mots de passe
-- Validation côté serveur de tous les inputs
-- Upload d'images sécurisé avec vérification d'extension
-- Logs d'authentification complets
+### ❌ Problèmes Courants
 
-## Images
+**"Erreur de connexion à la base de données"**
+- ✅ Vérifiez que MySQL est démarré dans WAMP/XAMPP
+- ✅ Contrôlez le mot de passe dans `db.php`
+- ✅ Vérifiez que la base `starmarket` existe
 
-Les items utilisent des URLs d'images officielles Star Citizen.
-Pour ajouter des images personnalisées :
-1. Uploadez dans le dossier uploads/
-2. Utilisez edit_item_image.php pour associer à un item
-3. Les images sont redimensionnées automatiquement
+**"Page blanche / erreur 500"**
+- ✅ Activez l'affichage des erreurs PHP dans WAMP/XAMPP
+- ✅ Vérifiez les permissions du dossier `uploads/`
+- ✅ Contrôlez les logs Apache pour plus de détails
 
-## URL de test utiles
+**"Images ne s'affichent pas"**
+- ✅ Permissions du dossier `uploads/` (lecture/écriture)
+- ✅ Vérifiez que le dossier existe : `StarMarket/uploads/`
+- ✅ Testez l'upload d'une nouvelle image
 
-- http://localhost/StarMarket/ - Accueil
-- http://localhost/StarMarket/items.php - Catalogue
-- http://localhost/StarMarket/deals.php - Bonnes affaires
-- http://localhost/StarMarket/register.php - Inscription
-- http://localhost/StarMarket/login.php - Connexion
+**"Formulaires ne fonctionnent pas"**
+- ✅ Sessions PHP activées (généralement par défaut)
+- ✅ Cookies acceptés dans le navigateur
+- ✅ JavaScript activé pour l'interactivité
 
-## Support
+### 🔧 Logs de Debug
 
-Pour des questions techniques ou des bugs, vérifiez :
-1. Les logs PHP dans WAMP/XAMPP
-2. Les logs MySQL pour les erreurs de base de données
-3. La console navigateur pour les erreurs JavaScript
-4. Les permissions du dossier uploads/
+**Localisation des logs :**
+- **Apache :** `wamp64/logs/apache_error.log`
+- **MySQL :** `wamp64/logs/mysql.log`
+- **PHP :** Configuré via `php.ini`
 
-## Structure des fichiers
+**Activer le debug PHP :**
+```php
+// Ajouter en haut de db.php pour debug temporaire
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+```
 
+### 🚀 Optimisations Production
+
+**Performance :**
+- Activer le cache PHP OPcache
+- Optimiser les images (WebP recommandé)
+- Index MySQL sur les colonnes de recherche
+
+**Sécurité :**
+- Changer les mots de passe par défaut
+- Configurer HTTPS obligatoire
+- Limiter les tentatives de connexion
+- Sauvegardes automatiques de la BDD
+
+## 🌟 Fonctionnalités Avancées Incluses
+
+### 🎨 Interface Utilisateur
+- **Thème sombre** authentique Star Citizen
+- **Responsive design** mobile-first optimisé
+- **Animations CSS** fluides et modernes
+- **JavaScript vanilla** sans dépendances lourdes
+- **Icons contextuels** pour chaque action
+
+### 🔄 Temps Réel
+- **Compteurs non-lus** mis à jour automatiquement
+- **Notifications** visuelles pour nouveaux messages
+- **Auto-refresh** des conversations actives
+- **Indicateurs de fraîcheur** sur les annonces récentes
+
+### 📱 Adaptabilité
+- **Mobile-first** : Interface optimisée tactile
+- **Responsive grids** : Adaptation automatique écrans
+- **Touch-friendly** : Boutons et liens adaptés mobile
+- **Offline graceful** : Dégradation élégante sans JS
+
+## 📞 Support et Documentation
+
+### 🆘 Besoin d'Aide ?
+
+**Pour des problèmes techniques :**
+1. Vérifiez les **logs** Apache/MySQL/PHP
+2. Consultez la section **Troubleshooting** ci-dessus
+3. Testez sur un **environnement propre** WAMP/XAMPP
+
+**Pour des questions fonctionnelles :**
+- Parcourez ce README complet
+- Testez avec les **comptes de démonstration**
+- Explorez les **données seed** fournies
+
+**Structure des fichiers détaillée :**
+```
 /StarMarket/
-├── config.php - Configuration globale
-├── db.php - Connexion base de données
-├── header.php / footer.php - Layout commun
-├── index.php - Page d'accueil
-├── auth/ - Pages d'authentification
-├── pages/ - Pages principales du site
-├── assets/ - CSS, JS, images
-├── uploads/ - Fichiers uploadés
-└── *.sql - Scripts de base de données
+├── 📁 assets/          CSS, JS, images système
+├── 📁 api/             Endpoints AJAX (JSON)
+├── 📁 uploads/         Images uploadées users
+├── 🗂️ *.php            Pages principales
+├── 🗂️ *.sql            Scripts de base de données
+└── 📄 README.txt       Cette documentation
+```
 
-Le site est prêt pour la production avec quelques ajustements :
-- Configurer un vrai serveur de mails
-- Ajouter HTTPS obligatoire  
-- Optimiser les images uploadées
-- Mettre en place la sauvegarde automatique
-- Configurer un système de cache
+---
+
+## ✨ Conclusion
+
+**StarMarket** est un marketplace complet et production-ready pour la communauté Star Citizen. 
+
+### 🎯 Prêt pour :
+- ✅ **Déploiement immédiat** sur WAMP/XAMPP
+- ✅ **Utilisation communautaire** avec plusieurs centaines d'utilisateurs
+- ✅ **Extension modulaire** avec nouvelles fonctionnalités
+- ✅ **Maintenance facile** avec code documenté et structuré
+
+### 🚀 Caractéristiques Uniques :
+- **Double économie** (Argent réel + In-Game)
+- **Bonnes affaires automatiques** avec intelligence de prix
+- **Messagerie intégrée** avec gestion de RDV
+- **Réputation communautaire** via système d'avis
+- **Sécurité renforcée** contre les attaques courantes
+
+**Bon trading dans l'univers de Star Citizen ! 🚀⭐**
