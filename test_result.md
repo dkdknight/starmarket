@@ -11,10 +11,11 @@ Implémentation des nouvelles fonctionnalités :
 4. Gestion des images d'items
 
 ## Plan d'Implémentation
-### Phase 1: Messagerie Temps Réel ✏️ EN COURS
+### Phase 1: Messagerie Temps Réel ✅ TERMINÉ
 - ✅ API endpoints créés (realtime-messages.php, send-message-ajax.php, etc.)
-- 🔄 Intégration dans conversation.php
-- ⏳ Tests de fonctionnement
+- ✅ Intégration SSE et AJAX dans conversation.php
+- ✅ API check-conversation-updates.php ajoutée
+- 🔄 Tests de fonctionnement en cours
 
 ### Phase 2: Transaction Management
 - ⏳ Page de création d'avis
