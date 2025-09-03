@@ -19,6 +19,7 @@ class StarMarketTester:
         self.test_results = []
         self.csrf_token = None
         self.user_id = None
+        self.php_available = False
         
     def log_result(self, test_name: str, success: bool, message: str, details: Dict = None):
         """Log test result"""
