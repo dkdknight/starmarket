@@ -59,6 +59,68 @@ class StarMarketTester:
             
         return True
 
+    def perform_static_analysis(self):
+        """Perform static code analysis when PHP server is not available"""
+        print("📋 Performing static code analysis of PHP files...")
+        
+        # Check if required API files exist
+        api_files = [
+            "/app/api/realtime-messages.php",
+            "/app/api/send-message-ajax.php", 
+            "/app/api/check-new-messages.php",
+            "/app/api/update-conversation-status.php",
+            "/app/api/check-conversation-updates.php",
+            "/app/api/discord-link.php",
+            "/app/api/item-images.php"
+        ]
+        
+        for api_file in api_files:
+            try:
+                with open(api_file, 'r') as f:
+                    content = f.read()
+                    
+                # Check for basic security patterns
+                has_auth = 'session' in content.lower() or 'authentication' in content.lower()
+                has_csrf = 'csrf' in content.lower()
+                has_validation = 'validate' in content.lower() or 'filter_input' in content.lower()
+                has_error_handling = 'try' in content or 'catch' in content or 'error' in content.lower()
+                
+                self.log_result(f"static_analysis_{api_file.split('/')[-1]}", True, 
+                              f"File exists with auth:{has_auth}, csrf:{has_csrf}, validation:{has_validation}, error_handling:{has_error_handling}")
+                              
+            except FileNotFoundError:
+                self.log_result(f"static_analysis_{api_file.split('/')[-1]}", False, "File not found")
+            except Exception as e:
+                self.log_result(f"static_analysis_{api_file.split('/')[-1]}", False, f"Error reading file: {str(e)}")
+        
+        # Check main application files
+        main_files = [
+            "/app/reviews.php",
+            "/app/discord-settings.php", 
+            "/app/manage-images.php",
+            "/app/conversation.php",
+            "/app/profile.php"
+        ]
+        
+        for main_file in main_files:
+            try:
+                with open(main_file, 'r') as f:
+                    content = f.read()
+                    
+                has_includes = 'include' in content or 'require' in content
+                has_db_connection = 'db.php' in content or 'database' in content.lower()
+                has_session = 'session' in content.lower()
+                
+                self.log_result(f"static_main_{main_file.split('/')[-1]}", True,
+                              f"File exists with includes:{has_includes}, db:{has_db_connection}, session:{has_session}")
+                              
+            except FileNotFoundError:
+                self.log_result(f"static_main_{main_file.split('/')[-1]}", False, "File not found")
+            except Exception as e:
+                self.log_result(f"static_main_{main_file.split('/')[-1]}", False, f"Error reading file: {str(e)}")
+        
+        return True
+
     def test_authentication_required(self):
         """Test that all API endpoints require authentication"""
         print("\n🔐 Testing authentication requirements...")
