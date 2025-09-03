@@ -601,6 +601,109 @@ $pending_reviews_count = count($pending_reviews);
     display: none;
 }
 
+/* Styles pour les avis en attente */
+.pending-reviews-section {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--accent);
+}
+
+.pending-reviews-section .section-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.pending-reviews-section .section-header h2 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.pending-reviews-section .section-header p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.pending-reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pending-review-card {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    align-items: center;
+}
+
+.review-item-info {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.item-thumbnail {
+    width: 50px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: var(--radius);
+}
+
+.review-item-info .item-details h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.review-item-info .variant-info {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.review-user-info {
+    text-align: center;
+}
+
+.role-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    display: inline-block;
+}
+
+.role-badge.seller {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.role-badge.buyer {
+    background-color: rgba(14, 165, 233, 0.1);
+    color: var(--primary);
+}
+
+.review-user-info .user-name {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.review-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
 @media (max-width: 1024px) {
     .conversation-item {
         grid-template-columns: 60px 1fr;
