@@ -128,31 +128,91 @@ chmod 644 uploads/*
 - ✅ Gestion d'erreurs robuste
 - ✅ Validation côté serveur complète
 
-## 📱 Pages Principales
+### 🏠 Pages Publiques
+- **index.php** : Accueil avec statistiques et dernières annonces
+- **items.php** : Catalogue complet avec recherche/filtres avancés
+- **item.php?id=X** : Fiche détaillée avec variantes et onglets dual-mode
+- **browse.php** : Navigation des annonces avec tri et filtres
+- **deals.php** : Bonnes affaires avec calcul automatique des réductions
+- **latest.php** : Dernières annonces par ordre chronologique
+- **profile.php?u=USERNAME** : Profils publics avec avis et statistiques
 
-### Pages utilisateur
-- index.php : Accueil avec dernières annonces et bonnes affaires
-- items.php : Catalogue des items avec recherche et filtres
-- item.php?id=X : Fiche détaillée d'un item avec variantes
-- browse.php : Navigation des annonces avec filtres avancés
-- deals.php : Bonnes affaires calculées automatiquement
-- latest.php : Dernières annonces par ordre chronologique
-- sell.php : Création d'annonces (connecté uniquement)
-- inbox.php : Liste des conversations (connecté uniquement)
-- conversation.php?id=X : Chat avec acheteur/vendeur
-- profile.php?u=USERNAME : Profil public avec avis et statistiques
+### 🔒 Pages Membres (Authentification Requise)
+- **sell.php** : Création d'annonces avec formulaire intelligent
+- **my-listings.php** : Gestion de toutes ses annonces
+- **inbox.php** : Liste des conversations avec filtres
+- **conversation.php?id=X** : Chat individuel avec gestion de statuts
+- **contact-seller.php?listing_id=X** : Premier contact avec templates
+- **watchlist.php** : Items suivis avec notifications
 
-### Authentification
-- register.php : Inscription avec validation complète
-- login.php : Connexion sécurisée
-- logout.php : Déconnexion et nettoyage session
+### 🔐 Authentification
+- **register.php** : Inscription avec validation complète
+- **login.php** : Connexion sécurisée avec redirection
+- **logout.php** : Déconnexion et nettoyage session
 
-### Administration
-- Rôles : USER, MODERATOR, ADMIN
-- Logs d'authentification automatiques
-- Système de modération intégré (à développer)
+## 🎯 Types de Transactions
 
-## Types de transactions
+### 💰 Argent Réel (REAL_MONEY)
+- **Utilisation :** Système de "gifting" Star Citizen
+- **Devises :** EUR, USD, GBP avec régions
+- **Sécurité :** Mise en relation uniquement (pas de paiement intégré)
+- **Fonctionnalités :**
+  - Notes du vendeur personnalisées
+  - Gestion des régions géographiques
+  - Instructions de livraison flexibles
+
+### 🎮 In-Game aUEC (IN_GAME)
+- **Utilisation :** Monnaie du jeu avec RDV planifiés
+- **Lieux :** Stations spatiales prédéfinies
+- **Organisation :** Créneaux de disponibilité + messagerie
+- **Fonctionnalités :**
+  - Lieux de RDV standardisés
+  - Gestion des horaires de disponibilité
+  - Coordination via messagerie intégrée
+
+## 🔥 Système de Bonnes Affaires
+
+Le calcul intelligent compare automatiquement :
+- **Prix des annonces** vs **Prix de référence du marché**
+- **Deal Score** = (Prix Référence - Prix Annonce) / Prix Référence
+- **Affichage** : Seules les annonces avec >10% de réduction
+- **Classement** : Tri par pourcentage de réduction décroissant
+- **Badges visuels** : Couleurs selon l'ampleur de la réduction
+
+## 🛡️ Sécurité Intégrée
+
+### 🔒 Protection des Données
+- **Anti-injection SQL** : Requêtes préparées PDO partout
+- **Protection CSRF** : Tokens sur tous les formulaires sensibles
+- **Hachage bcrypt** : Mots de passe avec salt automatique
+- **Validation serveur** : Double validation côté client/serveur
+
+### 📤 Upload Sécurisé
+- **Extensions** : jpg, jpeg, png, webp uniquement
+- **Taille** : Limite 5MB par fichier
+- **Validation** : Vérification des en-têtes d'images
+- **Nommage unique** : Prévention des conflits de fichiers
+
+### 👥 Gestion des Rôles
+- **USER** : Fonctionnalités standard d'achat/vente
+- **MODERATOR** : Outils de modération des annonces/utilisateurs
+- **ADMIN** : Accès complet + gestion des modérateurs
+
+## 📊 Statistiques et Analytics
+
+### 📈 Tableaux de Bord
+- **Accueil** : Stats globales du site en temps réel
+- **Profils** : Métriques individuelles des vendeurs
+- **Messagerie** : Compteurs de conversations non lues
+- **Mes Annonces** : Statistiques détaillées par vendeur
+
+### 🎯 Métriques Suivies
+- Nombre de vues par annonce
+- Taux de conversion contacts/ventes
+- Moyennes des avis par utilisateur
+- Activité des conversations
+
+## 🌐 URLs de Test Essentielles
 
 ### Argent réel (REAL_MONEY)
 - Prix en EUR/USD avec région (EU/NA)
