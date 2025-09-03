@@ -17,9 +17,12 @@ Implémentation des nouvelles fonctionnalités :
 - ✅ API check-conversation-updates.php ajoutée
 - 🔄 Tests de fonctionnement en cours
 
-### Phase 2: Transaction Management
-- ⏳ Page de création d'avis
-- ⏳ Affichage des avis sur les profils
+### Phase 2: Transaction Management ✅ TERMINÉ
+- ✅ Page de création d'avis (reviews.php complète)
+- ✅ Affichage des avis sur les profils (profile.php avec onglets)
+- ✅ Notification des avis en attente dans inbox.php
+- ✅ Notifications Discord pour nouveaux avis
+- ✅ Système complet de gestion des transactions et avis
 
 ### Phase 3: Discord Integration
 - ✅ Structure de base créée
