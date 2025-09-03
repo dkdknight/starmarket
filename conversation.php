@@ -904,20 +904,154 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Auto-refresh pour les nouveaux messages (toutes les 30 secondes)
-setInterval(function() {
-    const lastMessage = document.querySelector('.message:last-child');
-    const lastMessageTime = lastMessage ? lastMessage.dataset.timestamp : 0;
+// Système de messagerie temps réel avec SSE et AJAX
+let eventSource;
+let lastMessageId = <?= !empty($messages) ? max(array_column($messages, 'id')) : 0 ?>;
+
+// Initialiser les Server-Sent Events pour les messages temps réel
+function initRealTimeMessaging() {
+    if (eventSource) {
+        eventSource.close();
+    }
     
-    fetch(`api/check-conversation-updates.php?conversation_id=<?= $conversation_id ?>&last_message=${lastMessageTime}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.hasNew) {
-                location.reload();
-            }
+    eventSource = new EventSource(`api/realtime-messages.php?conversation_id=<?= $conversation_id ?>&last_message_id=${lastMessageId}`);
+    
+    eventSource.addEventListener('new_message', function(e) {
+        const messageData = JSON.parse(e.data);
+        addMessageToUI(messageData);
+        lastMessageId = Math.max(lastMessageId, messageData.id);
+        
+        // Scroll vers le bas si c'est notre message ou si on était déjà en bas
+        const messagesContainer = document.getElementById('messages-container');
+        const isAtBottom = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100;
+        if (messageData.is_own || isAtBottom) {
+            scrollToBottom();
+        }
+    });
+    
+    eventSource.addEventListener('status_change', function(e) {
+        const statusData = JSON.parse(e.data);
+        updateConversationStatus(statusData);
+    });
+    
+    eventSource.addEventListener('heartbeat', function(e) {
+        console.log('Connexion SSE active');
+    });
+    
+    eventSource.addEventListener('error', function(e) {
+        console.error('Erreur SSE, reconnexion dans 5 secondes...');
+        setTimeout(initRealTimeMessaging, 5000);
+    });
+}
+
+// Ajouter un message à l'interface utilisateur
+function addMessageToUI(messageData) {
+    const messagesContainer = document.getElementById('messages-container');
+    const noMessages = messagesContainer.querySelector('.no-messages');
+    
+    if (noMessages) {
+        noMessages.remove();
+    }
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${messageData.is_own ? 'message-own' : 'message-other'}`;
+    messageElement.dataset.messageId = messageData.id;
+    
+    const messageDate = new Date(messageData.created_at).toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    messageElement.innerHTML = `
+        <div class="message-header">
+            <span class="message-sender">
+                ${messageData.is_own ? 'Vous' : messageData.sender_name}
+            </span>
+            <span class="message-date">${messageDate}</span>
+        </div>
+        <div class="message-body">
+            ${messageData.body.replace(/\n/g, '<br>')}
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageElement);
+}
+
+// Envoyer un message via AJAX
+function sendMessageAjax(formData) {
+    const submitButton = document.querySelector('#message-form button[type="submit"]');
+    const originalText = submitButton.textContent;
+    
+    submitButton.disabled = true;
+    submitButton.textContent = 'Envoi...';
+    
+    fetch('api/send-message-ajax.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            conversation_id: <?= $conversation_id ?>,
+            message: formData.get('message'),
+            csrf_token: formData.get('csrf_token')
         })
-        .catch(error => console.error('Erreur lors de la vérification des nouveaux messages:', error));
-}, 30000);
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Le message sera affiché via SSE, on vide juste le formulaire
+            document.getElementById('message').value = '';
+            document.getElementById('char-count').textContent = '0';
+            document.getElementById('char-count').style.color = 'var(--text-muted)';
+        } else {
+            alert('Erreur: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors de l\'envoi:', error);
+        alert('Erreur lors de l\'envoi du message');
+    })
+    .finally(() => {
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+    });
+}
+
+// Modifier le gestionnaire de soumission du formulaire
+const messageForm = document.getElementById('message-form');
+if (messageForm) {
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        sendMessageAjax(formData);
+    });
+}
+
+// Fonction pour scroller vers le bas
+function scrollToBottom() {
+    const messagesContainer = document.getElementById('messages-container');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Fonction pour mettre à jour le statut de la conversation
+function updateConversationStatus(statusData) {
+    // Recharger la page pour afficher le nouveau statut
+    // Dans une version plus avancée, on pourrait mettre à jour l'UI directement
+    location.reload();
+}
+
+// Initialiser le système temps réel
+initRealTimeMessaging();
+
+// Nettoyer les connexions quand on quitte la page
+window.addEventListener('beforeunload', function() {
+    if (eventSource) {
+        eventSource.close();
+    }
+});
 </script>
 
 <?php require_once 'footer.php'; ?>
