@@ -291,7 +291,7 @@ $page_title = "Conversation - {$conversation['item_name']}";
         </div>
         <?php endif; ?>
         
-        <form method="POST" class="message-form">
+        <form method="POST" class="message-form" id="message-form">
             <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
             <input type="hidden" name="action" value="send_message">
             
