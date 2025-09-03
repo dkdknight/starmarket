@@ -38,10 +38,30 @@ $user_id = $current_user['id'];
 $stmt->execute([$user_id, $user_id, $user_id, $user_id, $user_id]);
 $conversations = $stmt->fetchAll();
 
+// Récupérer les avis en attente
+$pending_reviews_sql = "
+    SELECT pr.*, c.status, l.id as listing_id,
+           i.name as item_name, i.image_url as item_image,
+           iv.variant_name, iv.color_name,
+           rated_user.username as rated_username
+    FROM pending_reviews pr
+    JOIN conversations c ON pr.conversation_id = c.id
+    JOIN listings l ON c.listing_id = l.id
+    JOIN items i ON l.item_id = i.id
+    LEFT JOIN item_variants iv ON l.variant_id = iv.id
+    JOIN users rated_user ON pr.rated_id = rated_user.id
+    WHERE pr.rater_id = ? AND pr.is_completed = FALSE AND c.status = 'DONE'
+    ORDER BY pr.created_at DESC
+";
+$stmt = $pdo->prepare($pending_reviews_sql);
+$stmt->execute([$user_id]);
+$pending_reviews = $stmt->fetchAll();
+
 // Statistiques
 $total_conversations = count($conversations);
 $unread_conversations = count(array_filter($conversations, fn($c) => $c['unread_count'] > 0));
 $active_conversations = count(array_filter($conversations, fn($c) => $c['status'] === 'OPEN'));
+$pending_reviews_count = count($pending_reviews);
 ?>
 
 <div class="container">
