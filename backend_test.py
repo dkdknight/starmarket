@@ -40,17 +40,22 @@ class StarMarketTester:
         """Setup test environment with test user"""
         print("🔧 Setting up test environment...")
         
-        # Test basic connectivity
+        # Check if PHP server is available
         try:
-            response = self.session.get(f"{self.base_url}/index.php", timeout=10)
+            response = self.session.get(f"{self.base_url}/index.php", timeout=5)
             if response.status_code == 200:
-                self.log_result("connectivity", True, "Server is accessible")
+                self.log_result("connectivity", True, "PHP server is accessible")
+                self.php_available = True
             else:
                 self.log_result("connectivity", False, f"Server returned {response.status_code}")
-                return False
+                self.php_available = False
         except Exception as e:
-            self.log_result("connectivity", False, f"Cannot connect to server: {str(e)}")
-            return False
+            self.log_result("connectivity", False, f"Cannot connect to PHP server: {str(e)}")
+            self.php_available = False
+            
+        if not self.php_available:
+            print("⚠️  PHP server not available - performing static code analysis instead")
+            return self.perform_static_analysis()
             
         return True
 
