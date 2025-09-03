@@ -49,6 +49,7 @@ Implémentation des nouvelles fonctionnalités :
 - L'utilisateur a confirmé avoir le token Discord et l'ajoutera lui-même
 - Pas besoin d'Emergent LLM key pour cette application
 - Focus sur la finalisation des fonctionnalités temps réel
+- ✅ L'utilisateur préfère tester l'interface manuellement (pas de tests frontend automatiques)
 
 ## Notes Techniques
 - Application PHP 8+ avec MySQL
