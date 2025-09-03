@@ -61,19 +61,74 @@ chmod 644 uploads/*
 2. **Vérifier l'affichage :** Page d'accueil avec statistiques
 3. **Tester la connexion :** Utilisez un compte de test (voir ci-dessous)
 
-## 👥 Comptes de Test Disponibles
+**Pour créer un administrateur :**
+1. Inscrivez-vous normalement sur le site
+2. Dans phpMyAdmin, modifiez votre compte :
+   ```sql
+   UPDATE users SET role = 'ADMIN' WHERE username = 'votre_nom';
+   ```
 
-**Tous les comptes utilisent le mot de passe :** `password123`
+## 🌟 Fonctionnalités Implémentées
 
-| Email | Nom d'utilisateur | Rôle | Rating | Spécialité |
-|-------|------------------|------|--------|------------|
-| john.doe@test.com | JohnSpacePilot | USER | 4.8/5 | Vaisseaux d'exploration |
-| sarah.trader@test.com | SarahTrader | USER | 4.9/5 | Commerce professionnel |
-| mike.combat@test.com | MikeCombat | USER | 4.7/5 | Équipement militaire |
-| anna.explorer@test.com | AnnaExplorer | USER | 4.6/5 | Items d'exploration |
-| alex.miner@test.com | AlexMiner | USER | 4.5/5 | Équipement de minage |
+### 🔐 Système d'Authentification Complet
+- ✅ Inscription sécurisée avec validation
+- ✅ Connexion avec hachage bcrypt
+- ✅ Gestion des rôles (USER/MODERATOR/ADMIN)
+- ✅ Logs d'authentification automatiques
+- ✅ Protection CSRF sur tous les formulaires
 
-## Fonctionnalités principales
+### 📦 Catalogue d'Items Star Citizen
+- ✅ 30+ items officiels avec images RSI
+- ✅ Système de variantes couleur/skin
+- ✅ Recherche avancée et filtres multiples
+- ✅ Catégories : Vaisseaux, Armures, Armes, Composants, Peintures
+- ✅ Support des sources In-Game et Pledge Store
+
+### 💰 Double Système de Vente
+**Argent Réel (REAL_MONEY) :**
+- ✅ Prix en EUR/USD/GBP avec région
+- ✅ Système de "gifting" RSI
+- ✅ Instructions vendeur personnalisées
+
+**In-Game aUEC (IN_GAME) :**
+- ✅ Prix en monnaie du jeu
+- ✅ Lieux de RDV prédéfinis
+- ✅ Gestion des créneaux de disponibilité
+
+### 📈 Système de Bonnes Affaires
+- ✅ Calcul automatique des réductions vs prix référence
+- ✅ Deal Score avec pourcentages de réduction
+- ✅ Tri par meilleures offres
+- ✅ Badges visuels pour les promotions
+
+### 💬 Messagerie Intégrée
+- ✅ Conversations par annonce
+- ✅ Messages temps réel avec compteurs non-lus
+- ✅ Statuts de conversation (Ouvert/RDV/Terminé/Litige)
+- ✅ Templates de messages pré-remplis
+- ✅ Gestion des RDV avec détails
+
+### ⭐ Système d'Avis et Réputation
+- ✅ Notes 1-5 étoiles par transaction
+- ✅ Avis séparés Acheteur/Vendeur
+- ✅ Calcul automatique des moyennes
+- ✅ Profils publics avec statistiques
+
+### 🎨 Interface Utilisateur Avancée
+- ✅ Thème sombre Star Citizen authentique
+- ✅ Design responsive mobile-first
+- ✅ Animations et transitions fluides
+- ✅ JavaScript interactif sans frameworks
+- ✅ Icons et badges contextuels
+
+### 🛡️ Sécurité et Performance
+- ✅ Requêtes préparées PDO anti-injection
+- ✅ Upload d'images sécurisé avec validation
+- ✅ Pagination optimisée pour grandes données
+- ✅ Gestion d'erreurs robuste
+- ✅ Validation côté serveur complète
+
+## 📱 Pages Principales
 
 ### Pages utilisateur
 - index.php : Accueil avec dernières annonces et bonnes affaires
