@@ -1,49 +1,77 @@
 === StarMarket - Installation et Configuration ===
 
-## Installation sur WAMP/XAMPP
+## 🚀 Installation sur WAMP/XAMPP
 
 ### 1. Prérequis
 - WAMP Server ou XAMPP avec PHP 8.0+
 - MySQL 5.7+ ou MariaDB 10.3+
-- Extension PHP : PDO, PDO_MySQL
+- Extension PHP : PDO, PDO_MySQL, GD (pour les images)
 
-### 2. Installation
+### 2. Installation Rapide
 
-1. Copiez tous les fichiers dans votre dossier www/StarMarket/
-2. Démarrez Apache et MySQL depuis WAMP/XAMPP
-3. Accédez à phpMyAdmin (http://localhost/phpmyadmin)
-4. Créez une base de données "starmarket"
-5. Importez les fichiers SQL dans l'ordre :
-   - starmarket.sql (structure des tables)
-   - seed_items.sql (items et variantes)
-   - seed_listings.sql (annonces de test)
+1. **Copier les fichiers**
+   - Copiez tous les fichiers dans `www/StarMarket/`
+   - Structure attendue : `C:\wamp64\www\StarMarket\` ou `C:\xampp\htdocs\StarMarket\`
+
+2. **Démarrer les services**
+   - Lancez Apache et MySQL depuis WAMP/XAMPP
+   - Vérifiez que les services sont bien démarrés (icônes vertes)
+
+3. **Créer la base de données**
+   - Accédez à phpMyAdmin : http://localhost/phpmyadmin
+   - Créez une nouvelle base de données nommée `starmarket`
+   - Encodage : `utf8mb4_unicode_ci`
+
+4. **Importer les données**
+   Importez les fichiers SQL dans l'ordre suivant :
+   ```
+   1. starmarket.sql      (Structure des tables + rôles)
+   2. seed_items.sql      (30+ items Star Citizen avec variantes)
+   3. seed_listings.sql   (Annonces de test + utilisateurs)
+   ```
 
 ### 3. Configuration
 
-1. Ouvrez le fichier db.php
-2. Modifiez la ligne : $password = ''; 
-   Remplacez par votre mot de passe MySQL root
-3. Si nécessaire, ajustez $host et $username selon votre configuration
+**Configurer la connexion MySQL :**
+1. Ouvrez `db.php`
+2. Modifiez la ligne 6 :
+   ```php
+   $password = ''; // Remplacez par votre mot de passe MySQL root
+   ```
+3. Si vous utilisez un autre utilisateur MySQL :
+   ```php
+   $username = 'votre_utilisateur'; // Par défaut : 'root'
+   ```
 
-### 4. Permissions
+### 4. Permissions (Important)
 
-Assurez-vous que le dossier uploads/ est accessible en écriture :
-- Windows : Clic droit > Propriétés > Sécurité > Modifier les permissions
-- Linux : chmod 755 uploads/
+**Windows :**
+- Clic droit sur le dossier `uploads/` > Propriétés > Sécurité
+- Ajouter les permissions d'écriture pour l'utilisateur IIS/Apache
 
-### 5. Accès au site
+**Linux/Mac :**
+```bash
+chmod 755 uploads/
+chmod 644 uploads/*
+```
 
-Accédez à : http://localhost/StarMarket/
+### 5. Test d'Installation
 
-## Comptes de test disponibles
+1. **Accéder au site :** http://localhost/StarMarket/
+2. **Vérifier l'affichage :** Page d'accueil avec statistiques
+3. **Tester la connexion :** Utilisez un compte de test (voir ci-dessous)
 
-Les utilisateurs suivants sont créés avec le mot de passe "password123" :
+## 👥 Comptes de Test Disponibles
 
-- john.doe@test.com / JohnSpacePilot (Rating: 4.8/5)
-- sarah.trader@test.com / SarahTrader (Rating: 4.9/5) 
-- mike.combat@test.com / MikeCombat (Rating: 4.7/5)
-- anna.explorer@test.com / AnnaExplorer (Rating: 4.6/5)
-- alex.miner@test.com / AlexMiner (Rating: 4.5/5)
+**Tous les comptes utilisent le mot de passe :** `password123`
+
+| Email | Nom d'utilisateur | Rôle | Rating | Spécialité |
+|-------|------------------|------|--------|------------|
+| john.doe@test.com | JohnSpacePilot | USER | 4.8/5 | Vaisseaux d'exploration |
+| sarah.trader@test.com | SarahTrader | USER | 4.9/5 | Commerce professionnel |
+| mike.combat@test.com | MikeCombat | USER | 4.7/5 | Équipement militaire |
+| anna.explorer@test.com | AnnaExplorer | USER | 4.6/5 | Items d'exploration |
+| alex.miner@test.com | AlexMiner | USER | 4.5/5 | Équipement de minage |
 
 ## Fonctionnalités principales
 
