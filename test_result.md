@@ -24,10 +24,13 @@ Implémentation des nouvelles fonctionnalités :
 - ✅ Notifications Discord pour nouveaux avis
 - ✅ Système complet de gestion des transactions et avis
 
-### Phase 3: Discord Integration
+### Phase 3: Discord Integration ✅ TERMINÉ
 - ✅ Structure de base créée
-- ⏳ Configuration du token (fourni par l'utilisateur)
-- ⏳ Interface de liaison des comptes
+- ✅ API de gestion des comptes Discord (api/discord-link.php)
+- ✅ Interface complète de liaison des comptes (discord-settings.php)
+- ✅ Support pour tous les types de notifications Discord
+- ✅ Historique et logs des notifications
+- ✅ Messages de test et validation
 
 ### Phase 4: Item Image Management
 - ⏳ Vérification des images par défaut
