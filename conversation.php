@@ -909,12 +909,17 @@ let lastMessageId = <?= !empty($messages) ? max(array_column($messages, 'id')) :
 
 // Initialiser les Server-Sent Events pour les messages temps réel
 function fetchNewMessages() {
-    fetch(`api/fetch-new-messages.php?conversation_id=<?= $conversation_id ?>&last_id=${lastMessageId}`)
+    fetch(`api/fetch-new-messages.php?conversation_id=<?= $conversation_id ?>&last_id=${lastMessageId}`, {
+        credentials: 'same-origin',
+        cache: 'no-store'
+    })
         .then(response => response.json())
         .then(data => {
             if (data.success && Array.isArray(data.messages)) {
                 const messagesContainer = document.getElementById('messages-container');
-                const isAtBottom = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100;
+                const isAtBottom =
+                    messagesContainer.scrollTop + messagesContainer.clientHeight >=
+                    messagesContainer.scrollHeight - 100;
 
                 data.messages.forEach(msg => {
                     addMessageToUI(msg);
@@ -978,6 +983,8 @@ function sendMessageAjax(formData) {
     
     fetch('api/send-message-ajax.php', {
         method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
         headers: {
             'Content-Type': 'application/json',
         },
@@ -991,9 +998,12 @@ function sendMessageAjax(formData) {
     .then(data => {
         if (data.success) {
             // Le message sera affiché via SSE, on vide juste le formulaire
+                        addMessageToUI(data.message);
+            lastMessageId = Math.max(lastMessageId, data.message.id);
             document.getElementById('message').value = '';
             document.getElementById('char-count').textContent = '0';
             document.getElementById('char-count').style.color = 'var(--text-muted)';
+            scrollToBottom();
         } else {
             alert('Erreur: ' + data.message);
         }
@@ -1005,16 +1015,6 @@ function sendMessageAjax(formData) {
     .finally(() => {
         submitButton.disabled = false;
         submitButton.textContent = originalText;
-    });
-}
-
-// Modifier le gestionnaire de soumission du formulaire
-const messageForm = document.getElementById('message-form');
-if (messageForm) {
-    messageForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        sendMessageAjax(formData);
     });
 }
 
@@ -1030,13 +1030,21 @@ function updateConversationStatus(statusData) {
     // Dans une version plus avancée, on pourrait mettre à jour l'UI directement
     location.reload();
 }
+// Initialisation après chargement du DOM
+document.addEventListener('DOMContentLoaded', () => {
+    const messageForm = document.getElementById('message-form');
+    if (messageForm) {
+        messageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            sendMessageAjax(formData);
+        });
+    }
 
-// Initialiser le système temps réel
-initRealTimeMessaging();
-
-// Nettoyer les connexions quand on quitte la page
-fetchNewMessages();
-scrollToBottom();
+    fetchNewMessages();
+    scrollToBottom();
+    setInterval(fetchNewMessages, 3000);
+});
 </script>
 
 <?php require_once 'footer.php'; ?>
