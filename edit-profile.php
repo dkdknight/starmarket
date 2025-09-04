@@ -1,255 +1,280 @@
 <?php
-// app/edit-profile.php
-session_start();
-require_once __DIR__ . '/includes/db.php';
+$page_title = 'Modifier mon profil';
+require_once 'header.php';
 
-if (empty($_SESSION['user_id'])) {
-  header('Location: login.php');
-  exit;
-}
+// L'utilisateur doit être connecté pour modifier son profil
+requireLogin();
 
-// -------- CSRF helpers ----------
-if (empty($_SESSION['csrf_token'])) {
-  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-function csrf_check($token) {
-  return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], (string)$token);
-}
+$errors = [];
 
-// -------- Utils  ----------
-function redirect_with($url, array $flash = []) {
-  if (!empty($flash)) $_SESSION['_flash'] = $flash;
-  header("Location: $url");
-  exit;
-}
-function get_flash() {
-  $f = $_SESSION['_flash'] ?? null;
-  unset($_SESSION['_flash']);
-  return $f;
-}
-function ensure_dir($path) {
-  if (!is_dir($path)) @mkdir($path, 0777, true);
-}
+// Pré-remplir les champs avec les données actuelles
+$email = $current_user['email'] ?? '';
+$username = $current_user['username'] ?? '';
+$bio = $current_user['bio'] ?? '';
+$discord_user_id = $current_user['discord_user_id'] ?? '';
+$discord_notifications = (bool)($current_user['discord_notifications'] ?? true);
 
-// -------- Charge l'utilisateur courant ----------
-$st = $pdo->prepare("SELECT id, username, email, avatar_url, bio, discord_user_id, COALESCE(discord_dm_opt_in,0) AS discord_dm_opt_in, password_hash FROM users WHERE id=?");
-$st->execute([$_SESSION['user_id']]);
-$user = $st->fetch(PDO::FETCH_ASSOC);
-if (!$user) {
-  redirect_with('login.php', ['err' => 'Utilisateur introuvable']);
-}
-
-// -------- POST: sauvegarde ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $token = $_POST['csrf_token'] ?? '';
-  if (!csrf_check($token)) {
-    redirect_with('edit-profile.php', ['err' => 'Session expirée. Réessayez.']);
-  }
+    $email = trim($_POST['email'] ?? '');
+    $username = trim($_POST['username'] ?? '');
+    $bio = trim($_POST['bio'] ?? '');
+    $discord_user_id = trim($_POST['discord_user_id'] ?? '');
+    $discord_notifications = isset($_POST['discord_notifications']);
+    $csrf_token = $_POST['csrf_token'] ?? '';
 
-  $newUsername = trim($_POST['username'] ?? $user['username']);
-  $newEmail    = trim($_POST['email'] ?? $user['email']);
-  $newBio      = trim($_POST['bio'] ?? ($user['bio'] ?? ''));
-  $dmOptIn     = isset($_POST['discord_dm_opt_in']) ? 1 : 0;
+    // Validation CSRF
+    if (!validateCSRFToken($csrf_token)) {
+        $errors[] = 'Token de sécurité invalide.';
+    }
 
-  $curPwd      = $_POST['current_password'] ?? '';
-  $newPwd      = $_POST['new_password'] ?? '';
-  $newPwd2     = $_POST['new_password_confirm'] ?? '';
-
-  $errors = [];
-  $updates = [];
-  $params  = [];
-
-  // ---- validation username
-  if ($newUsername === '') {
-    $errors[] = 'Le pseudonyme est requis.';
-  } elseif (mb_strlen($newUsername) > 40) {
-    $errors[] = 'Le pseudonyme est trop long (max 40).';
-  } elseif ($newUsername !== $user['username']) {
-    $chk = $pdo->prepare("SELECT id FROM users WHERE username=? AND id<>?");
-    $chk->execute([$newUsername, $user['id']]);
-    if ($chk->fetch()) $errors[] = 'Ce pseudonyme est déjà utilisé.';
-  }
-
-  // ---- validation email
-  if ($newEmail !== '' && !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-    $errors[] = 'Email invalide.';
-  } elseif ($newEmail !== $user['email']) {
-    $chk = $pdo->prepare("SELECT id FROM users WHERE email=? AND id<>?");
-    $chk->execute([$newEmail, $user['id']]);
-    if ($chk->fetch()) $errors[] = 'Cet email est déjà utilisé.';
-  }
-
-  // ---- avatar upload (optionnel)
-  $avatarUrl = null;
-  if (!empty($_FILES['avatar']['name'])) {
-    $f = $_FILES['avatar'];
-    if ($f['error'] === UPLOAD_ERR_OK) {
-      if ($f['size'] > 1024 * 1024) { // 1MB
-        $errors[] = 'Avatar trop volumineux (max 1 Mo).';
-      } else {
-        $fi   = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($fi, $f['tmp_name']);
-        if (!in_array($mime, ['image/jpeg', 'image/png'])) {
-          $errors[] = 'Format avatar non supporté (jpg ou png).';
-        } else {
-          $ext = $mime === 'image/png' ? 'png' : 'jpg';
-          $dir = __DIR__ . '/uploads/avatars';
-          ensure_dir($dir);
-          $fn  = 'avatar_' . $user['id'] . '_' . time() . '.' . $ext;
-          $dst = $dir . '/' . $fn;
-          if (!move_uploaded_file($f['tmp_name'], $dst)) {
-            $errors[] = 'Échec upload avatar.';
-          } else {
-            $avatarUrl = '/app/uploads/avatars/' . $fn;
-          }
+    // Validation de l'email
+    if (empty($email)) {
+        $errors[] = "L'email est requis.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Format d'email invalide.";
+    } elseif ($email !== $current_user['email']) {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        if ($stmt->fetchColumn() > 0) {
+            $errors[] = 'Cette adresse email est déjà utilisée.';
         }
-      }
-    } elseif ($f['error'] !== UPLOAD_ERR_NO_FILE) {
-      $errors[] = 'Erreur upload avatar (code '.$f['error'].').';
     }
-  }
 
-  // ---- changement mot de passe (optionnel)
-  $newPwdHash = null;
-  if ($newPwd !== '' || $newPwd2 !== '') {
-    if ($newPwd !== $newPwd2) {
-      $errors[] = 'La confirmation du mot de passe ne correspond pas.';
-    } elseif (mb_strlen($newPwd) < 8) {
-      $errors[] = 'Le nouveau mot de passe doit contenir au moins 8 caractères.';
-    } else {
-      // vérifier l'actuel
-      if (empty($user['password_hash'])) {
-        $errors[] = 'Impossible de vérifier le mot de passe actuel.';
-      } elseif (!password_verify($curPwd, $user['password_hash'])) {
-        $errors[] = 'Mot de passe actuel incorrect.';
-      } else {
-        $newPwdHash = password_hash($newPwd, PASSWORD_DEFAULT);
-      }
+    // Validation du nom d'utilisateur
+    if (empty($username)) {
+        $errors[] = "Le nom d'utilisateur est requis.";
+    } elseif (strlen($username) < USERNAME_MIN_LENGTH) {
+        $errors[] = 'Le nom d\'utilisateur doit contenir au moins ' . USERNAME_MIN_LENGTH . ' caractères.';
+    } elseif (strlen($username) > USERNAME_MAX_LENGTH) {
+        $errors[] = 'Le nom d\'utilisateur ne peut pas dépasser ' . USERNAME_MAX_LENGTH . ' caractères.';
+    } elseif (!preg_match('/^[a-zA-Z0-9_-]+$/', $username)) {
+        $errors[] = 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, tirets et underscores.';
+    } elseif ($username !== $current_user['username']) {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE username = ?');
+        $stmt->execute([$username]);
+        if ($stmt->fetchColumn() > 0) {
+            $errors[] = 'Ce nom d\'utilisateur est déjà utilisé.';
+        }
     }
-  }
 
-  if (!empty($errors)) {
-    redirect_with('edit-profile.php', ['err' => implode("\n", $errors)]);
-  }
+    // Validation de la bio
+    if (strlen($bio) > 1000) {
+        $errors[] = 'La bio ne peut pas dépasser 1000 caractères.';
+    }
 
-  // ---- build update
-  if ($newUsername !== $user['username']) { $updates[] = 'username=?'; $params[] = $newUsername; }
-  if ($newEmail    !== $user['email'])    { $updates[] = 'email=?';    $params[] = $newEmail; }
-  if ($newBio      !== ($user['bio'] ?? '')) { $updates[] = 'bio=?';   $params[] = $newBio; }
-  if ((int)$dmOptIn !== (int)$user['discord_dm_opt_in']) { $updates[] = 'discord_dm_opt_in=?'; $params[] = (int)$dmOptIn; }
-  if ($avatarUrl) { $updates[] = 'avatar_url=?'; $params[] = $avatarUrl; }
-  if ($newPwdHash) { $updates[] = 'password_hash=?'; $params[] = $newPwdHash; }
+    // Validation de l'ID Discord
+    if (!empty($discord_user_id) && !preg_match('/^[0-9]{17,19}$/', $discord_user_id)) {
+        $errors[] = "L'ID Discord doit contenir entre 17 et 19 chiffres.";
+    }
+    if (empty($discord_user_id)) {
+        $discord_user_id = null;
+        $discord_notifications = false;
+    }
 
-  if (!empty($updates)) {
-    $params[] = $user['id'];
-    $sql = "UPDATE users SET ".implode(', ', $updates)." WHERE id=?";
-    $upd = $pdo->prepare($sql);
-    $upd->execute($params);
-  }
+    // Gestion du mot de passe
+    $new_password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+    $update_password = false;
+    if (!empty($new_password) || !empty($confirm_password)) {
+        if ($new_password !== $confirm_password) {
+            $errors[] = 'Les mots de passe ne correspondent pas.';
+        } elseif (strlen($new_password) < PASSWORD_MIN_LENGTH) {
+            $errors[] = 'Le mot de passe doit contenir au moins ' . PASSWORD_MIN_LENGTH . ' caractères.';
+        } else {
+            $update_password = true;
+        }
+    }
 
-  redirect_with('edit-profile.php', ['ok' => 'Profil mis à jour.']);
+    // Upload de l'avatar
+    $avatar_url = null;
+    if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $upload_result = processImageUpload($_FILES['avatar'], 'avatars');
+        if (!$upload_result['success']) {
+            $errors = array_merge($errors, $upload_result['errors']);
+        } else {
+            $avatar_url = $upload_result['file_url'];
+        }
+    }
+
+    if (empty($errors)) {
+        $params = [$email, $username, $bio, $discord_user_id, $discord_notifications];
+        $sql = 'UPDATE users SET email = ?, username = ?, bio = ?, discord_user_id = ?, discord_notifications = ?';
+        if ($avatar_url) {
+            $sql .= ', avatar_url = ?';
+            $params[] = $avatar_url;
+        }
+        if ($update_password) {
+            $sql .= ', password_hash = ?';
+            $params[] = password_hash($new_password, PASSWORD_DEFAULT);
+        }
+        $sql .= ' WHERE id = ?';
+        $params[] = $current_user['id'];
+
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute($params)) {
+            header('Location: profile.php?u=' . urlencode($username) . '&success=profile_updated');
+            exit;
+        } else {
+            $errors[] = 'Erreur lors de la mise à jour du profil.';
+        }
+    }
 }
-
-// -------- GET: affiche le formulaire ----------
-$flash = get_flash();
-$pageTitle = 'Modifier mon profil';
-include __DIR__ . '/header.php';
 ?>
-<div class="container" style="max-width:880px;margin:0 auto;">
-  <h1>Modifier mon profil</h1>
 
-  <?php if(!empty($flash['ok'])): ?>
-    <div class="alert alert-success"><?= nl2br(htmlspecialchars($flash['ok'])) ?></div>
-  <?php endif; ?>
-  <?php if(!empty($flash['err'])): ?>
-    <div class="alert alert-danger"><?= nl2br(htmlspecialchars($flash['err'])) ?></div>
-  <?php endif; ?>
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Modifier mon profil</h1>
+                <p>Mettez à jour vos informations</p>
+            </div>
 
-  <form action="edit-profile.php" method="post" enctype="multipart/form-data" style="display:grid;gap:18px;margin-top:14px;">
-    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <?php if (!empty($errors)): ?>
+            <div class="alert alert-error">
+                <ul>
+                    <?php foreach ($errors as $error): ?>
+                    <li><?= sanitizeOutput($error) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endif; ?>
 
-    <!-- Avatar -->
-    <div class="card" style="padding:16px;">
-      <h3>Avatar</h3>
-      <div style="display:flex;gap:16px;align-items:center;">
-        <div>
-          <?php if(!empty($user['avatar_url'])): ?>
-            <img src="<?= htmlspecialchars($user['avatar_url']) ?>" alt="Avatar" style="height:96px;width:96px;border-radius:50%;object-fit:cover;">
-          <?php else: ?>
-            <div style="height:96px;width:96px;border-radius:50%;background:#2b2f36;display:flex;align-items:center;justify-content:center;color:#9aa4b2;">A</div>
-          <?php endif; ?>
+            <form method="POST" class="auth-form" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+
+                <div class="form-group">
+                    <label for="avatar" class="form-label">Photo de profil</label>
+                    <input type="file" id="avatar" name="avatar" class="form-input" accept="image/*">
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" value="<?= sanitizeOutput($email) ?>" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="username" class="form-label">Nom d'utilisateur</label>
+                    <input type="text" id="username" name="username" class="form-input"
+                           value="<?= sanitizeOutput($username) ?>"
+                           minlength="<?= USERNAME_MIN_LENGTH ?>"
+                           maxlength="<?= USERNAME_MAX_LENGTH ?>"
+                           pattern="[a-zA-Z0-9_-]+" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="bio" class="form-label">Bio</label>
+                    <textarea id="bio" name="bio" class="form-input" rows="4" maxlength="1000"><?= sanitizeOutput($bio) ?></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="discord_user_id" class="form-label">ID Discord</label>
+                    <input type="text" id="discord_user_id" name="discord_user_id" class="form-input"
+                           value="<?= sanitizeOutput($discord_user_id) ?>" pattern="[0-9]{17,19}" placeholder="123456789012345678">
+                    <div class="form-help">17-19 chiffres</div>
+                </div>
+
+                <div class="form-group form-checkbox">
+                    <label>
+                        <input type="checkbox" name="discord_notifications" <?= $discord_notifications ? 'checked' : '' ?>>
+                        Activer les notifications Discord
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Nouveau mot de passe</label>
+                    <input type="password" id="password" name="password" class="form-input" minlength="<?= PASSWORD_MIN_LENGTH ?>">
+                    <div class="form-help">Laissez vide pour conserver votre mot de passe actuel</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Confirmer le mot de passe</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-input">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Mettre à jour</button>
+            </form>
         </div>
-        <div>
-          <input type="file" name="avatar" accept="image/png,image/jpeg">
-          <div style="font-size:12px;opacity:.8;">Formats: JPG/PNG — 1 Mo max</div>
-        </div>
-      </div>
     </div>
-
-    <!-- Identité -->
-    <div class="card" style="padding:16px;">
-      <h3>Identité</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <label> Pseudonyme
-          <input type="text" name="username" value="<?= htmlspecialchars($user['username']) ?>" required>
-        </label>
-        <label> Email
-          <input type="email" name="email" value="<?= htmlspecialchars($user['email']) ?>">
-        </label>
-      </div>
-    </div>
-
-    <!-- Bio -->
-    <div class="card" style="padding:16px;">
-      <h3>Bio</h3>
-      <textarea name="bio" rows="5" style="width:100%;" placeholder="Quelques mots sur vous..."><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
-    </div>
-
-    <!-- Discord -->
-    <div class="card" style="padding:16px;">
-      <h3>Discord</h3>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <label style="display:flex;align-items:center;gap:8px;">
-          <input type="checkbox" name="discord_dm_opt_in" <?= ((int)$user['discord_dm_opt_in']===1?'checked':'') ?>>
-          Recevoir des notifications privées (DM) sur Discord
-        </label>
-      </div>
-      <div style="margin-top:8px;font-size:14px;opacity:.9;">
-        Statut :
-        <?php if (!empty($user['discord_user_id'])): ?>
-          ✅ Compte Discord lié (ID: <?= htmlspecialchars($user['discord_user_id']) ?>).
-          <a href="discord-settings.php">Gérer la liaison</a>
-        <?php else: ?>
-          ⚠️ Non lié. <a href="discord-settings.php">Lier mon compte</a>
-        <?php endif; ?>
-      </div>
-    </div>
-
-    <!-- Mot de passe -->
-    <div class="card" style="padding:16px;">
-      <h3>Changer le mot de passe</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <label> Mot de passe actuel
-          <input type="password" name="current_password" autocomplete="current-password">
-        </label>
-        <div></div>
-        <label> Nouveau mot de passe
-          <input type="password" name="new_password" autocomplete="new-password" placeholder="Min 8 caractères">
-        </label>
-        <label> Confirmer le nouveau mot de passe
-          <input type="password" name="new_password_confirm" autocomplete="new-password">
-        </label>
-      </div>
-      <div style="font-size:12px;opacity:.8;margin-top:6px;">
-        Laissez vide pour ne pas changer votre mot de passe.
-      </div>
-    </div>
-
-    <div>
-      <button class="btn" type="submit">Enregistrer</button>
-      <a class="btn btn-secondary" href="profile.php?id=<?= (int)$user['id'] ?>">Annuler</a>
-    </div>
-  </form>
 </div>
 
-<?php include __DIR__ . '/footer.php'; ?>
+<style>
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 2rem 0;
+}
+
+.auth-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header h1 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.auth-header p {
+    color: var(--text-secondary);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.form-help {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.btn-full {
+    width: 100%;
+}
+
+.form-checkbox {
+    display: flex;
+    align-items: center;
+}
+
+.form-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+</style>
+
+<?php require_once 'footer.php'; ?>

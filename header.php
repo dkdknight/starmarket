@@ -149,6 +149,9 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
                 case 'message_sent':
                     echo 'Votre message a été envoyé.';
                     break;
+                case 'profile_updated':
+                    echo 'Profil mis à jour.';
+                    break;
                 default:
                     echo 'Opération réussie.';
             }
