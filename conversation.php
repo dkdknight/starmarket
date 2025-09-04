@@ -909,7 +909,7 @@ let lastMessageId = <?= !empty($messages) ? max(array_column($messages, 'id')) :
 
 // Initialiser les Server-Sent Events pour les messages temps réel
 function fetchNewMessages() {
-    fetch(`api/fetch-new-messages.php?conversation_id=<?= $conversation_id ?>&last_id=${lastMessageId}`, {
+    return fetch(`api/fetch-new-messages.php?conversation_id=<?= $conversation_id ?>&last_id=${lastMessageId}`, {
         credentials: 'same-origin',
         cache: 'no-store'
     })
@@ -998,7 +998,7 @@ function sendMessageAjax(formData) {
     .then(data => {
         if (data.success) {
             // Le message sera affiché via SSE, on vide juste le formulaire
-                        addMessageToUI(data.message);
+            addMessageToUI(data.message);
             lastMessageId = Math.max(lastMessageId, data.message.id);
             document.getElementById('message').value = '';
             document.getElementById('char-count').textContent = '0';
@@ -1039,11 +1039,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(this);
             sendMessageAjax(formData);
         });
+
+        const messageInput = document.getElementById('message');
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const formData = new FormData(messageForm);
+                sendMessageAjax(formData);
+            }
+        });
     }
 
     fetchNewMessages();
     scrollToBottom();
-    setInterval(fetchNewMessages, 3000);
+    
+        function pollMessages() {
+        fetchNewMessages().finally(() => {
+            setTimeout(pollMessages, 3000);
+        });
+    }
+
+    pollMessages();
 });
 </script>
 

@@ -3,7 +3,7 @@
 $host = 'localhost';
 $dbname = 'starmarket';
 $username = 'root';
-$password = 'Ght20cd-A200e'; // À renseigner selon votre configuration
+$password = ''; // À renseigner selon votre configuration
 
 try {
     $pdo = new PDO(

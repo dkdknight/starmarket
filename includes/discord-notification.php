@@ -5,7 +5,7 @@
 
 // ⚠️ Sécurité : ne commit JAMAIS un token réel. Utilise un fichier ignoré (.env/env.local.php)
 // OU une variable d'environnement.
-define('DISCORD_BOT_TOKEN', 'MTQxMjg2MzU4MjIzNjA1MzUwNA.GM4ov1.DNJRFISEy243uzY7gsAy2bkDFWeUfrL7-WXpXA'); // ← change ton token compromis
+define('DISCORD_BOT_TOKEN', ''); // ← change ton token compromis
 define('DISCORD_API_URL', 'https://discord.com/api/v10');
 
 // (optionnel) journal de debug
