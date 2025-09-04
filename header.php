@@ -101,10 +101,13 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
                                 <a href="watchlist.php" class="dropdown-item">
                                     Ma Watchlist
                                 </a>
+                                <a href="discord-settings.php" class="dropdown-item">
+                                    🔗 Paramètres Discord
+                                </a>
                                 <?php if ($current_user['role'] === 'MODERATOR' || $current_user['role'] === 'ADMIN'): ?>
                                 <div class="dropdown-divider"></div>
-                                <a href="moderation.php" class="dropdown-item">
-                                    Modération
+                                <a href="manage-images.php" class="dropdown-item">
+                                    🖼️ Gestion Images
                                 </a>
                                 <?php endif; ?>
                                 <?php if ($current_user['role'] === 'ADMIN'): ?>

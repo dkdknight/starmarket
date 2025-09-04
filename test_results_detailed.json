@@ -1,0 +1,93 @@
+[
+  {
+    "test": "connectivity",
+    "success": false,
+    "message": "Cannot connect to PHP server: HTTPConnectionPool(host='localhost', port=80): Max retries exceeded with url: /index.php (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0xfcc40d00b090>: Failed to establish a new connection: [Errno 111] Connection refused'))",
+    "timestamp": "2025-09-03T18:04:43.047486",
+    "details": {}
+  },
+  {
+    "test": "static_analysis_realtime-messages.php",
+    "success": true,
+    "message": "File exists with auth:True, csrf:False, validation:False, error_handling:True",
+    "timestamp": "2025-09-03T18:04:43.047769",
+    "details": {}
+  },
+  {
+    "test": "static_analysis_send-message-ajax.php",
+    "success": true,
+    "message": "File exists with auth:True, csrf:True, validation:True, error_handling:True",
+    "timestamp": "2025-09-03T18:04:43.047944",
+    "details": {}
+  },
+  {
+    "test": "static_analysis_check-new-messages.php",
+    "success": true,
+    "message": "File exists with auth:True, csrf:False, validation:False, error_handling:True",
+    "timestamp": "2025-09-03T18:04:43.048011",
+    "details": {}
+  },
+  {
+    "test": "static_analysis_update-conversation-status.php",
+    "success": true,
+    "message": "File exists with auth:True, csrf:True, validation:True, error_handling:True",
+    "timestamp": "2025-09-03T18:04:43.048208",
+    "details": {}
+  },
+  {
+    "test": "static_analysis_check-conversation-updates.php",
+    "success": true,
+    "message": "File exists with auth:True, csrf:False, validation:False, error_handling:True",
+    "timestamp": "2025-09-03T18:04:43.048307",
+    "details": {}
+  },
+  {
+    "test": "static_analysis_discord-link.php",
+    "success": true,
+    "message": "File exists with auth:True, csrf:True, validation:True, error_handling:True",
+    "timestamp": "2025-09-03T18:04:43.048520",
+    "details": {}
+  },
+  {
+    "test": "static_analysis_item-images.php",
+    "success": true,
+    "message": "File exists with auth:True, csrf:True, validation:True, error_handling:True",
+    "timestamp": "2025-09-03T18:04:43.048775",
+    "details": {}
+  },
+  {
+    "test": "static_main_reviews.php",
+    "success": true,
+    "message": "File exists with includes:True, db:False, session:False",
+    "timestamp": "2025-09-03T18:04:43.049309",
+    "details": {}
+  },
+  {
+    "test": "static_main_discord-settings.php",
+    "success": true,
+    "message": "File exists with includes:True, db:False, session:False",
+    "timestamp": "2025-09-03T18:04:43.049699",
+    "details": {}
+  },
+  {
+    "test": "static_main_manage-images.php",
+    "success": true,
+    "message": "File exists with includes:True, db:False, session:False",
+    "timestamp": "2025-09-03T18:04:43.050325",
+    "details": {}
+  },
+  {
+    "test": "static_main_conversation.php",
+    "success": true,
+    "message": "File exists with includes:True, db:False, session:False",
+    "timestamp": "2025-09-03T18:04:43.051095",
+    "details": {}
+  },
+  {
+    "test": "static_main_profile.php",
+    "success": true,
+    "message": "File exists with includes:True, db:False, session:False",
+    "timestamp": "2025-09-03T18:04:43.051622",
+    "details": {}
+  }
+]

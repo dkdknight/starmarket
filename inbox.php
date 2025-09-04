@@ -38,10 +38,30 @@ $user_id = $current_user['id'];
 $stmt->execute([$user_id, $user_id, $user_id, $user_id, $user_id]);
 $conversations = $stmt->fetchAll();
 
+// Récupérer les avis en attente
+$pending_reviews_sql = "
+    SELECT pr.*, c.status, l.id as listing_id,
+           i.name as item_name, i.image_url as item_image,
+           iv.variant_name, iv.color_name,
+           rated_user.username as rated_username
+    FROM pending_reviews pr
+    JOIN conversations c ON pr.conversation_id = c.id
+    JOIN listings l ON c.listing_id = l.id
+    JOIN items i ON l.item_id = i.id
+    LEFT JOIN item_variants iv ON l.variant_id = iv.id
+    JOIN users rated_user ON pr.rated_id = rated_user.id
+    WHERE pr.rater_id = ? AND pr.is_completed = FALSE AND c.status = 'DONE'
+    ORDER BY pr.created_at DESC
+";
+$stmt = $pdo->prepare($pending_reviews_sql);
+$stmt->execute([$user_id]);
+$pending_reviews = $stmt->fetchAll();
+
 // Statistiques
 $total_conversations = count($conversations);
 $unread_conversations = count(array_filter($conversations, fn($c) => $c['unread_count'] > 0));
 $active_conversations = count(array_filter($conversations, fn($c) => $c['status'] === 'OPEN'));
+$pending_reviews_count = count($pending_reviews);
 ?>
 
 <div class="container">
@@ -76,6 +96,62 @@ $active_conversations = count(array_filter($conversations, fn($c) => $c['status'
             </div>
         </div>
     </div>
+
+    <!-- Avis en attente -->
+    <?php if (!empty($pending_reviews)): ?>
+    <div class="pending-reviews-section">
+        <div class="section-header">
+            <h2>⭐ Avis en attente (<?= $pending_reviews_count ?>)</h2>
+            <p>Ces transactions sont terminées, vous pouvez maintenant laisser un avis</p>
+        </div>
+        
+        <div class="pending-reviews-list">
+            <?php foreach ($pending_reviews as $review): ?>
+            <div class="pending-review-card">
+                <div class="review-item-info">
+                    <img src="<?= sanitizeOutput($review['item_image'] ?: 'assets/img/placeholder.jpg') ?>" 
+                         alt="<?= sanitizeOutput($review['item_name']) ?>"
+                         class="item-thumbnail">
+                    
+                    <div class="item-details">
+                        <h4><?= sanitizeOutput($review['item_name']) ?></h4>
+                        <?php if ($review['variant_name']): ?>
+                        <p class="variant-info">
+                            <?= sanitizeOutput($review['variant_name']) ?>
+                            <?php if ($review['color_name']): ?>
+                            - <?= sanitizeOutput($review['color_name']) ?>
+                            <?php endif; ?>
+                        </p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <div class="review-user-info">
+                    <div class="role-info">
+                        <?php if ($review['role'] === 'SELLER'): ?>
+                        <span class="role-badge seller">Évaluer le vendeur</span>
+                        <?php else: ?>
+                        <span class="role-badge buyer">Évaluer l'acheteur</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="user-name">
+                        <?= sanitizeOutput($review['rated_username']) ?>
+                    </div>
+                </div>
+                
+                <div class="review-actions">
+                    <a href="reviews.php?id=<?= $review['id'] ?>" class="btn btn-primary btn-sm">
+                        ⭐ Laisser un avis
+                    </a>
+                    <a href="conversation.php?id=<?= $review['conversation_id'] ?>" class="btn btn-outline btn-sm">
+                        💬 Voir conversation
+                    </a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Filtres rapides -->
     <div class="inbox-filters">
@@ -523,6 +599,109 @@ $active_conversations = count(array_filter($conversations, fn($c) => $c['status'
 /* Styles pour les filtres */
 .conversation-item.hidden {
     display: none;
+}
+
+/* Styles pour les avis en attente */
+.pending-reviews-section {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--accent);
+}
+
+.pending-reviews-section .section-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.pending-reviews-section .section-header h2 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.pending-reviews-section .section-header p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.pending-reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pending-review-card {
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    align-items: center;
+}
+
+.review-item-info {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.item-thumbnail {
+    width: 50px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: var(--radius);
+}
+
+.review-item-info .item-details h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.review-item-info .variant-info {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.review-user-info {
+    text-align: center;
+}
+
+.role-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    display: inline-block;
+}
+
+.role-badge.seller {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.role-badge.buyer {
+    background-color: rgba(14, 165, 233, 0.1);
+    color: var(--primary);
+}
+
+.review-user-info .user-name {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.review-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
 }
 
 @media (max-width: 1024px) {
