@@ -4,7 +4,7 @@ session_start();
 
 // Configuration du site
 define('SITE_NAME', 'StarMarket');
-define('SITE_URL', 'http://localhost/StarMarket');
+define('SITE_URL', 'http://knight-hd.fr/starmarket/starmarket');
 define('UPLOADS_DIR', __DIR__ . '/uploads');
 define('UPLOADS_URL', SITE_URL . '/uploads');
 

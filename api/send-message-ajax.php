@@ -44,8 +44,11 @@ if (strlen($message_body) > 2000) {
 try {
     // Vérifier que l'utilisateur fait partie de cette conversation
     $stmt = $pdo->prepare("
-        SELECT c.*, l.seller_id, u_buyer.username as buyer_username, u_seller.username as seller_username,
-               u_buyer.discord_user_id as buyer_discord, u_seller.discord_user_id as seller_discord
+        SELECT c.*, l.seller_id,
+               u_buyer.username as buyer_username, u_seller.username as seller_username,
+               u_buyer.discord_user_id as buyer_discord, u_seller.discord_user_id as seller_discord,
+               u_buyer.discord_notifications as buyer_discord_enabled,
+               u_seller.discord_notifications as seller_discord_enabled
         FROM conversations c
         JOIN listings l ON c.listing_id = l.id
         JOIN users u_buyer ON c.buyer_id = u_buyer.id
@@ -92,17 +95,21 @@ try {
     // Déterminer le destinataire pour Discord
     $recipient_discord_id = null;
     $recipient_username = '';
-    
+
     if ($user_id === $conversation['buyer_id']) {
         // L'acheteur envoie un message au vendeur
-        $recipient_discord_id = $conversation['seller_discord'];
-        $recipient_username = $conversation['seller_username'];
+        if (!empty($conversation['seller_discord_enabled'])) {
+            $recipient_discord_id = $conversation['seller_discord'];
+            $recipient_username = $conversation['seller_username'];
+        }
     } else {
-        // Le vendeur envoie un message à l'acheteur  
-        $recipient_discord_id = $conversation['buyer_discord'];
-        $recipient_username = $conversation['buyer_username'];
+        // Le vendeur envoie un message à l'acheteur
+        if (!empty($conversation['buyer_discord_enabled'])) {
+            $recipient_discord_id = $conversation['buyer_discord'];
+            $recipient_username = $conversation['buyer_username'];
+        }
     }
-    
+
     // Envoyer notification Discord si configuré
     if ($recipient_discord_id) {
         require_once '../includes/discord-notification.php';

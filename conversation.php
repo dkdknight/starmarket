@@ -905,44 +905,32 @@ document.addEventListener('click', function(e) {
 });
 
 // Système de messagerie temps réel avec SSE et AJAX
-let eventSource;
 let lastMessageId = <?= !empty($messages) ? max(array_column($messages, 'id')) : 0 ?>;
 
 // Initialiser les Server-Sent Events pour les messages temps réel
-function initRealTimeMessaging() {
-    if (eventSource) {
-        eventSource.close();
-    }
-    
-    eventSource = new EventSource(`api/realtime-messages.php?conversation_id=<?= $conversation_id ?>&last_message_id=${lastMessageId}`);
-    
-    eventSource.addEventListener('new_message', function(e) {
-        const messageData = JSON.parse(e.data);
-        addMessageToUI(messageData);
-        lastMessageId = Math.max(lastMessageId, messageData.id);
-        
-        // Scroll vers le bas si c'est notre message ou si on était déjà en bas
-        const messagesContainer = document.getElementById('messages-container');
-        const isAtBottom = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100;
-        if (messageData.is_own || isAtBottom) {
-            scrollToBottom();
-        }
-    });
-    
-    eventSource.addEventListener('status_change', function(e) {
-        const statusData = JSON.parse(e.data);
-        updateConversationStatus(statusData);
-    });
-    
-    eventSource.addEventListener('heartbeat', function(e) {
-        console.log('Connexion SSE active');
-    });
-    
-    eventSource.addEventListener('error', function(e) {
-        console.error('Erreur SSE, reconnexion dans 5 secondes...');
-        setTimeout(initRealTimeMessaging, 5000);
-    });
+function fetchNewMessages() {
+    fetch(`api/fetch-new-messages.php?conversation_id=<?= $conversation_id ?>&last_id=${lastMessageId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && Array.isArray(data.messages)) {
+                const messagesContainer = document.getElementById('messages-container');
+                const isAtBottom = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100;
+
+                data.messages.forEach(msg => {
+                    addMessageToUI(msg);
+                    lastMessageId = Math.max(lastMessageId, msg.id);
+                });
+
+                if (data.messages.length > 0 && isAtBottom) {
+                    scrollToBottom();
+                }
+            }
+        })
+        .catch(err => console.error('Erreur lors de la récupération des messages:', err));
 }
+
+// Vérifier régulièrement les nouveaux messages
+setInterval(fetchNewMessages, 5000);
 
 // Ajouter un message à l'interface utilisateur
 function addMessageToUI(messageData) {
@@ -1047,11 +1035,8 @@ function updateConversationStatus(statusData) {
 initRealTimeMessaging();
 
 // Nettoyer les connexions quand on quitte la page
-window.addEventListener('beforeunload', function() {
-    if (eventSource) {
-        eventSource.close();
-    }
-});
+fetchNewMessages();
+scrollToBottom();
 </script>
 
 <?php require_once 'footer.php'; ?>

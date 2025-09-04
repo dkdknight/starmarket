@@ -125,25 +125,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Auto-refresh pour les pages de messagerie (toutes les 30 secondes)
-    if (window.location.pathname.includes('conversation.php') || window.location.pathname.includes('inbox.php')) {
-        setInterval(function() {
-            // Vérifier s'il y a de nouveaux messages
-            const lastMessageTime = document.querySelector('.message:last-child')?.dataset.timestamp;
-            
-            if (lastMessageTime) {
-                fetch(window.location.href + '&check_new=' + lastMessageTime)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.hasNew) {
-                            location.reload();
-                        }
-                    })
-                    .catch(error => console.error('Erreur lors de la vérification des nouveaux messages:', error));
-            }
-        }, 30000);
-    }
-    
     // Smooth scroll pour les ancres
     const anchorLinks = document.querySelectorAll('a[href^="#"]');
     
