@@ -135,6 +135,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare($sql);
                 if ($stmt->execute($params)) {
                     $listing_id = $pdo->lastInsertId();
+
+                    $watchers_stmt = $pdo->prepare("SELECT u.discord_user_id FROM watchlist w JOIN users u ON w.user_id = u.id WHERE w.item_id = ? AND (w.variant_id IS NULL OR w.variant_id = ?) AND w.user_id != ? AND u.discord_user_id IS NOT NULL AND u.discord_notifications = TRUE");
+                    $watchers_stmt->execute([$item_id, $variant_id, $current_user['id']]);
+                    $watchers = $watchers_stmt->fetchAll(PDO::FETCH_COLUMN);
+                    if ($watchers) {
+                        require_once 'includes/discord-notification.php';
+                        foreach ($watchers as $discord_id) {
+                            sendDiscordMessage($discord_id, [
+                                'type' => 'watchlist_listing',
+                                'item_name' => $selected_item['name'] ?? '',
+                                'listing_url' => SITE_URL . "/item.php?id=" . $item_id
+                            ]);
+                        }
+                    }
+
                     header("Location: my-listings.php?success=created&id={$listing_id}");
                     exit;
                 } else {

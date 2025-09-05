@@ -17,6 +17,7 @@ if (!$listing_id) {
 $stmt = $pdo->prepare("
     SELECT l.*, i.name as item_name, i.image_url as item_image,
            u.username as seller_username, u.id as seller_id, u.rating_avg,
+           u.discord_user_id as seller_discord_id, u.discord_notifications as seller_discord_enabled,
            iv.variant_name, iv.color_name
     FROM listings l
     JOIN items i ON l.item_id = i.id
@@ -93,7 +94,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$conversation_id, $current_user['id'], $message]);
                 
                 $pdo->commit();
-                
+
+                if (!empty($listing['seller_discord_enabled']) && !empty($listing['seller_discord_id'])) {
+                    require_once 'includes/discord-notification.php';
+                    sendDiscordMessage($listing['seller_discord_id'], [
+                        'type' => 'new_message',
+                        'sender' => $current_user['username'],
+                        'message_preview' => substr($message, 0, 100),
+                        'conversation_url' => SITE_URL . "/conversation.php?id=" . $conversation_id
+                    ]);
+                }
+
                 header('Location: conversation.php?id=' . $conversation_id . '&success=message_sent');
                 exit;
                 

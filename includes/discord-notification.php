@@ -224,22 +224,40 @@ function buildDiscordMessage(array $data) {
             ];
 
         case 'new_review':
-            $stars = (int)max(0, min(5, $data['stars']));
+            $stars = (int) max(0, min(5, (int)($data['stars'] ?? 0)));
             $stars_display = str_repeat('⭐', $stars) . str_repeat('☆', 5 - $stars);
             return [
                 'embeds' => [[
-                    'title'=>'⭐ Nouvel avis reçu sur StarMarket',
-                    'description'=>"**{$data['reviewer']}** a laissé un avis sur votre transaction !",
-                    'fields'=>[
-                        ['name'=>'Item','value'=>$data['item_name'],'inline'=>true],
-                        ['name'=>'Note','value'=>"$stars_display ({$stars}/5)",'inline'=>true],
-                        ['name'=>'Rôle','value'=>($data['role']==='SELLER'?'En tant que vendeur':'En tant qu’acheteur'),'inline'=>true],
+                    'title'       => '⭐ Nouvel avis reçu sur StarMarket',
+                    'description' => "**{$data['reviewer']}** a laissé un avis sur votre transaction !",
+                    'fields'      => [
+                        ['name' => 'Item', 'value' => $data['item_name'], 'inline' => true],
+                        ['name' => 'Note', 'value' => "$stars_display ({$stars}/5)", 'inline' => true],
+                        ['name' => 'Rôle', 'value' => ($data['role'] === 'SELLER' ? 'En tant que vendeur' : 'En tant qu’acheteur'), 'inline' => true],
                     ],
-                    'color'=> $stars >= 4 ? 0x10b981 : ($stars >= 3 ? 0xf59e0b : 0xef4444),
-                    'footer'=>['text'=>'StarMarket - Marketplace Star Citizen'],
-                    'timestamp'=>date('c')
+                    'color'     => $stars >= 4 ? 0x10b981 : ($stars >= 3 ? 0xf59e0b : 0xef4444),
+                    'footer'    => ['text' => 'StarMarket - Marketplace Star Citizen'],
+                    'timestamp' => date('c'),
                 ]],
-                'components'=>[[ 'type'=>1,'components'=>[[ 'type'=>2,'style'=>5,'label'=>'Voir votre profil','url'=>$data['profile_url'] ]] ]]
+                'components' => [[
+                    'type'       => 1,
+                    'components' => [[ 'type' => 2, 'style' => 5, 'label' => 'Voir votre profil', 'url' => $data['profile_url'] ]],
+                ]],
+            ];
+
+        case 'watchlist_listing':
+            return [
+                'embeds' => [[
+                    'title'       => '👀 Nouvelle annonce pour un item suivi',
+                    'description' => "Une nouvelle annonce pour **{$data['item_name']}** vient d'être publiée.",
+                    'color'       => 0x8b5cf6,
+                    'footer'      => ['text' => 'StarMarket - Marketplace Star Citizen'],
+                    'timestamp'   => date('c'),
+                ]],
+                'components' => [[
+                    'type' => 1,
+                    'components' => [[ 'type' => 2, 'style' => 5, 'label' => "Voir l'annonce", 'url' => $data['listing_url'] ]]
+                ]]
             ];
 
         default:
