@@ -1,6 +1,7 @@
 <?php
 // Configuration globale de l'application
 session_start();
+ob_start();
 
 // Configuration du site
 define('SITE_NAME', 'StarMarket');

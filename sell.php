@@ -172,7 +172,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Étape 1: Sélection de l'item -->
             <div class="form-section">
                 <h2>1️⃣ Sélectionner l'Item</h2>
-                
+
+                <div class="form-group">
+                    <label for="item_search" class="form-label">Recherche</label>
+                    <input type="text" id="item_search" class="form-input" placeholder="Rechercher un item...">
+                </div>
+
+                <div class="form-group">
+                    <label for="category_filter" class="form-label">Catégorie</label>
+                    <select id="category_filter" class="form-select">
+                        <option value="">Toutes les catégories</option>
+                        <option value="SHIP">🚀 Vaisseaux</option>
+                        <option value="ARMOR">🛡️ Armures</option>
+                        <option value="WEAPON">⚔️ Armes</option>
+                        <option value="COMPONENT">🔧 Composants</option>
+                        <option value="PAINT">🎨 Peintures</option>
+                        <option value="OTHER">📦 Autres</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="item_id" class="form-label">Item à vendre *</label>
                     <select id="item_id" name="item_id" class="form-select" required onchange="loadVariants(this.value)">
@@ -187,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 case 'PAINT': echo '🎨 Peintures'; break;
                                 case 'OTHER': echo '📦 Autres'; break;
                             }
-                        ?>">
+                        ?>" data-category="<?= $category ?>">
                             <?php foreach ($category_items as $item): ?>
                             <option value="<?= $item['id'] ?>" 
                                     data-image="<?= sanitizeOutput($item['image_url']) ?>"
@@ -622,63 +640,149 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </style>
 
 <script>
-// Données des items pour le JavaScript
-const itemsData = <?= json_encode($items) ?>;
-const itemsVariants = {};
+// =========================
+// 1) Données JS
+// =========================
+const PRESELECTED_ID = <?= (int)$preselected_item_id ?>;
 
-// Charger les variantes quand un item est sélectionné
+// items bruts (une ligne par item)
+const itemsData = <?= json_encode($items, JSON_UNESCAPED_UNICODE) ?>;
+
+// table de libellés pour les catégories
+const CATEGORY_LABELS = {
+  'SHIP': '🚀 Vaisseaux',
+  'ARMOR': '🛡️ Armures',
+  'WEAPON': '⚔️ Armes',
+  'COMPONENT': '🔧 Composants',
+  'PAINT': '🎨 Peintures',
+  'OTHER': '📦 Autres'
+};
+
+// =========================
+// 2) Variantes (inchangé)
+// =========================
 function loadVariants(itemId) {
-    const variantSelect = document.getElementById('variant_id');
-    const itemPreview = document.getElementById('item_preview');
-    const previewImage = document.getElementById('preview_image');
-    const previewName = document.getElementById('preview_name');
-    const previewDescription = document.getElementById('preview_description');
-    
-    // Vider les variantes
-    variantSelect.innerHTML = '<option value="">Version standard</option>';
-    
-    if (!itemId) {
-        itemPreview.style.display = 'none';
-        return;
-    }
-    
-    // Trouver l'item sélectionné
-    const selectedItem = itemsData.find(item => item.id == itemId);
-    if (!selectedItem) return;
-    
-    // Afficher l'aperçu
-    previewImage.src = selectedItem.image_url || 'assets/img/placeholder.jpg';
-    previewName.textContent = selectedItem.name;
-    previewDescription.textContent = selectedItem.description || '';
-    itemPreview.style.display = 'flex';
-    
-    // Charger les variantes via AJAX
-    fetch(`api/item-variants.php?item_id=${itemId}`)
-        .then(response => response.json())
-        .then(variants => {
-            variants.forEach(variant => {
-                const option = document.createElement('option');
-                option.value = variant.id;
-                option.textContent = variant.variant_name + 
-                    (variant.color_name ? ` - ${variant.color_name}` : '');
-                variantSelect.appendChild(option);
-            });
-        })
-        .catch(error => console.error('Erreur lors du chargement des variantes:', error));
+  const variantSelect = document.getElementById('variant_id');
+  const itemPreview = document.getElementById('item_preview');
+  const previewImage = document.getElementById('preview_image');
+  const previewName = document.getElementById('preview_name');
+  const previewDescription = document.getElementById('preview_description');
+
+  // reset des variantes
+  variantSelect.innerHTML = '<option value="">Version standard</option>';
+
+  if (!itemId) {
+    itemPreview.style.display = 'none';
+    return;
+  }
+
+  const selectedItem = itemsData.find(i => String(i.id) === String(itemId));
+  if (!selectedItem) return;
+
+  // Aperçu
+  previewImage.src = selectedItem.image_url || 'assets/img/placeholder.jpg';
+  previewName.textContent = selectedItem.name || '';
+  previewDescription.textContent = selectedItem.description || '';
+  itemPreview.style.display = 'flex';
+
+  // Variantes via API
+  fetch(`api/item-variants.php?item_id=${itemId}`)
+    .then(r => r.json())
+    .then(variants => {
+      variants.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = v.variant_name + (v.color_name ? ` - ${v.color_name}` : '');
+        variantSelect.appendChild(opt);
+      });
+    })
+    .catch(err => console.error('Erreur variantes:', err));
 }
 
-// Initialiser si un item est pré-sélectionné
-document.addEventListener('DOMContentLoaded', function() {
-    const itemSelect = document.getElementById('item_id');
-    if (itemSelect.value) {
-        loadVariants(itemSelect.value);
+// =========================
+// 3) Rendu dynamique du SELECT
+// =========================
+function renderItemOptions({query = '', category = ''} = {}) {
+  const itemSelect = document.getElementById('item_id');
+  const current = itemSelect.value; // garder la sélection si possible
+
+  const q = query.trim().toLowerCase();
+
+  // Regrouper par catégorie après filtrage
+  const grouped = new Map(); // cat -> [items]
+  for (const it of itemsData) {
+    // filtre catégorie
+    if (category && String(it.category) !== String(category)) continue;
+    // filtre recherche (on cherche dans nom + manufacturer si présent)
+    const text = `${it.name || ''} ${(it.manufacturer || '')}`.toLowerCase();
+    if (q && !text.includes(q)) continue;
+
+    if (!grouped.has(it.category)) grouped.set(it.category, []);
+    grouped.get(it.category).push(it);
+  }
+
+  // Reconstruire le HTML des options
+  let html = '<option value="">-- Choisir un item --</option>';
+  for (const [cat, arr] of grouped.entries()) {
+    const label = CATEGORY_LABELS[cat] || cat || 'Autres';
+    html += `<optgroup label="${escapeHtml(label)}" data-category="${escapeAttr(cat)}">`;
+    for (const it of arr) {
+      const selected = (String(it.id) === String(current) || (!current && PRESELECTED_ID && String(it.id) === String(PRESELECTED_ID)))
+        ? ' selected' : '';
+      const manufacturer = it.manufacturer ? ` - ${escapeHtml(it.manufacturer)}` : '';
+      html += `<option value="${escapeAttr(it.id)}"${selected}>${escapeHtml(it.name)}${manufacturer}</option>`;
     }
-    
-    // Vérifier le type de vente pré-sélectionné
-    const checkedRadio = document.querySelector('input[name="sale_type"]:checked');
-    if (checkedRadio) {
-        checkedRadio.dispatchEvent(new Event('change'));
-    }
+    html += '</optgroup>';
+  }
+
+  // Injecter
+  itemSelect.innerHTML = html;
+
+  // Si rien de sélectionné et qu'une seule option utile existe, l'auto-sélectionner
+  const options = itemSelect.querySelectorAll('option[value]:not([value=""])');
+  if (!itemSelect.value && options.length === 1) {
+    itemSelect.value = options[0].value;
+  }
+
+  // Mettre à jour l’aperçu/variantes si un item est (ou devient) sélectionné
+  if (itemSelect.value) {
+    loadVariants(itemSelect.value);
+  } else {
+    loadVariants('');
+  }
+}
+
+// petites fonctions d'échappement
+function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function escapeAttr(s){ return String(s).replaceAll('"','&quot;'); }
+
+// =========================
+// 4) Initialisation & filtres
+// =========================
+document.addEventListener('DOMContentLoaded', () => {
+  const itemSelect     = document.getElementById('item_id');
+  const itemSearch     = document.getElementById('item_search');
+  const categoryFilter = document.getElementById('category_filter');
+
+  function applyFilters() {
+    renderItemOptions({
+      query: itemSearch.value || '',
+      category: categoryFilter.value || ''
+    });
+  }
+
+  itemSearch.addEventListener('input', applyFilters);
+  categoryFilter.addEventListener('change', applyFilters);
+
+  // Premier rendu
+  applyFilters();
+
+  // Si un type de vente est précoché, déclencher ses champs conditionnels
+  const checkedRadio = document.querySelector('input[name="sale_type"]:checked');
+  if (checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
+
+  // Change de variantes à la sélection d'item
+  itemSelect.addEventListener('change', () => loadVariants(itemSelect.value));
 });
 </script>
 
